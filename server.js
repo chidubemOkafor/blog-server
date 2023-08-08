@@ -26,7 +26,7 @@ app.post("/api/signup", (req, res) => {
       .json({ message: "not complete", type: "error", status: "404" });
   }
   sql = "INSERT INTO createaccount(username,passwords,email) VALUES(?,?,?)";
-  values = [name, email, password];
+  values = [name, password, email];
 
   connection.query(sql, values, (error, response) => {
     if (error) {
@@ -41,6 +41,14 @@ app.post("/api/signup", (req, res) => {
     }
   });
 });
+
+// app.get("/api/login", (req, res) => {
+//   if() {
+
+//   } else {
+
+//   }
+// });
 
 app.listen(PORT, () => {
   console.log(`app listening on port ${PORT}...`);
