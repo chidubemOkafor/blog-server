@@ -33,7 +33,7 @@ app.post("/api/signup", async (req, res) => {
   try {
     const encrypted_password = await bcrypt.hash(
       password,
-      process.env.SALTROUNDS
+      parseInt(process.env.SALTROUNDS)
     );
 
     const sql =
@@ -97,46 +97,49 @@ app.post("/api/login", async (req, res) => {
     if (result == 0) {
       console.log("does not exist");
       res.status(404).json({
-        message: "account does not exist",
+        message: "email is not registered",
         type: "",
         status: 404,
       });
-    }
-
-    const encrypted_password = result[0].passwords;
-    const DBusername = result[0].username;
-    const DBemail = result[0].email;
-    try {
-      const passwordMatch = await bcrypt.compare(password, encrypted_password);
-
-      if (passwordMatch) {
-        const token = jwt.sign(
-          { DBusername, DBemail, encrypted_password },
-          process.env.SECRET,
-          {
-            expiresIn: "1h",
-          }
+    } else {
+      const encrypted_password = result[0].passwords;
+      const DBusername = result[0].username;
+      const DBemail = result[0].email;
+      try {
+        const passwordMatch = await bcrypt.compare(
+          password,
+          encrypted_password
         );
 
-        res.cookie("token", token, {
-          httpOnly: true,
-        });
-        res.status(200).json({ message: "login successfull", status: 200 });
-      } else {
-        console.log("incorrect password");
-        res.status(401).json({
-          message: "incorrect password",
-          type: "unAuthorized",
-          status: 401,
+        if (passwordMatch) {
+          const token = jwt.sign(
+            { DBusername, DBemail, encrypted_password },
+            process.env.SECRET,
+            {
+              expiresIn: "1h",
+            }
+          );
+
+          res.cookie("token", token, {
+            httpOnly: true,
+          });
+          res.status(200).json({ message: "login successfull", status: 200 });
+        } else {
+          console.log("incorrect password");
+          res.status(401).json({
+            message: "incorrect password",
+            type: "unAuthorized",
+            status: 401,
+          });
+        }
+      } catch (erro) {
+        console.error(error);
+        res.status(500).json({
+          message: "internal server erro",
+          type: "server returned error",
+          status: 500,
         });
       }
-    } catch (erro) {
-      console.error(error);
-      res.status(500).json({
-        message: "internal server erro",
-        type: "server returned error",
-        status: 500,
-      });
     }
   });
 });
