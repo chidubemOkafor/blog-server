@@ -36,8 +36,9 @@ app.post("/api/signup", async (req, res) => {
       process.env.SALTROUNDS
     );
 
-    sql = "INSERT INTO createaccount(username,passwords,email) VALUES(?,?,?)";
-    values = [name, encrypted_password, email];
+    const sql =
+      "INSERT INTO createaccount(username,passwords,email) VALUES(?,?,?)";
+    const values = [name, encrypted_password, email];
 
     connection.query(sql, values, (error, result) => {
       if (error) {
@@ -81,7 +82,7 @@ app.post("/api/login", async (req, res) => {
 
   const sql =
     "SELECT passwords,username,email FROM createaccount WHERE email = ?";
-  value = [email];
+  const value = [email];
 
   connection.query(sql, value, async (error, result) => {
     if (error) {
