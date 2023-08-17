@@ -4,6 +4,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
+const { verifyToken, checkExists } = require("./middlewares/middlewares.js");
 require("dotenv").config();
 
 const PORT = process.env.PORT || 8090;
@@ -22,7 +23,7 @@ app.use(express.json());
 app.use(cors());
 app.use(cookieParser());
 
-app.post("/api/signup", async (req, res) => {
+app.post("/api/signup", checkExists, async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.json({ message: "not complete", type: "error", status: 404 });
@@ -47,17 +48,26 @@ app.post("/api/signup", async (req, res) => {
           status: 500,
         });
       } else {
-        const token = jwt.sign(
-          { name, email, encrypted_password },
-          process.env.SECRET,
-          { expiresIn: "1h" }
+        connection.query(
+          `SELECT id FROM createaccount WHERE username = ? AND passwords = ? AND email = ?`,
+          [name, encrypted_password, email],
+          (error, result) => {
+            if (error) {
+              console.log(error);
+            } else {
+              const id = result[0].id;
+              const token = jwt.sign({ id }, process.env.SECRET, {
+                expiresIn: "1h",
+              });
+              res.cookie("token", token, {
+                httpOnly: true,
+              });
+              return res
+                .status(200)
+                .json({ message: "account created", status: 200 });
+            }
+          }
         );
-        res.cookie("token", token, {
-          httpOnly: true,
-        });
-        return res
-          .status(200)
-          .json({ message: "account created", status: 200 });
       }
     });
   } catch (error) {
@@ -105,9 +115,8 @@ app.post("/api/login", async (req, res) => {
         });
       }
 
+      const id = result[0].id;
       const encrypted_password = result[0].passwords;
-      const DBusername = result[0].username;
-      const DBemail = result[0].email;
 
       try {
         const passwordMatch = await bcrypt.compare(
@@ -116,13 +125,9 @@ app.post("/api/login", async (req, res) => {
         );
 
         if (passwordMatch) {
-          const token = jwt.sign(
-            { DBusername, DBemail, encrypted_password },
-            process.env.SECRET,
-            {
-              expiresIn: "1h",
-            }
-          );
+          const token = jwt.sign({ id }, process.env.SECRET, {
+            expiresIn: "1h",
+          });
 
           res.cookie("token", token, {
             httpOnly: true,
@@ -157,7 +162,39 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.get("/api/getusers", (req, res) => {});
+app.get("/api/getuserprofile", verifyToken, (req, res) => {
+  const userId = req.userId;
+  connection.query(
+    "SELECT username, email, profilepik FROM createaccount WHERE id = ?",
+    [userId],
+    (error, result) => {
+      if (error) {
+        console.log("reverted with: ", error);
+        return res.status(500).json({
+          message: "internal server error",
+          type: "query error",
+          status: 500,
+        });
+      }
+
+      const { username, email, profilepik } = result[0];
+      res.json({
+        userdata: {
+          name: username,
+          email: email,
+          profilePicture: profilepik,
+        },
+        status: 200,
+        createBy: "chidubem_okafor",
+      });
+    }
+  );
+});
+
+app.post("/api/logout", (req, res) => {
+  res.clearCookie("token"); // Clear the authentication cookie
+  res.status(200).json({ message: "Logged out successfully" });
+});
 
 app.listen(PORT, () => {
   console.log(`app listening on port ${PORT}...`);
