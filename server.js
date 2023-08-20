@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const { verifyToken, checkExists } = require("./middlewares/middlewares.js");
+
 require("dotenv").config();
 
 const PORT = process.env.PORT || 8090;
@@ -20,7 +21,12 @@ const app = express();
 })();
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // frontend url
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 
 app.post("/api/signup", checkExists, async (req, res) => {
@@ -60,7 +66,7 @@ app.post("/api/signup", checkExists, async (req, res) => {
                 expiresIn: "1h",
               });
               res.cookie("token", token, {
-                httpOnly: true,
+                httpOnly: false,
               });
               return res
                 .status(200)
@@ -130,7 +136,7 @@ app.post("/api/login", async (req, res) => {
           });
 
           res.cookie("token", token, {
-            httpOnly: true,
+            httpOnly: false,
           });
           return res
             .status(200)
@@ -161,12 +167,11 @@ app.post("/api/login", async (req, res) => {
     });
   }
 });
-
-app.get("/api/getuserprofile", verifyToken, (req, res) => {
-  const userId = req.userId;
+app.get("/api/getprofile/:id", verifyToken, (req, res) => {
+  const { id } = req.params; // Change 'userId' to 'id'
   connection.query(
     "SELECT username, email, profilepik FROM createaccount WHERE id = ?",
-    [userId],
+    [id],
     (error, result) => {
       if (error) {
         console.log("reverted with: ", error);
@@ -177,7 +182,17 @@ app.get("/api/getuserprofile", verifyToken, (req, res) => {
         });
       }
 
+      // Check if there is a result
+      if (result.length === 0) {
+        return res.json({
+          message: "User not found",
+          status: 404,
+        });
+      }
+
+      // Access the first element of the result array
       const { username, email, profilepik } = result[0];
+
       res.json({
         userdata: {
           name: username,
@@ -185,7 +200,7 @@ app.get("/api/getuserprofile", verifyToken, (req, res) => {
           profilePicture: profilepik,
         },
         status: 200,
-        createBy: "chidubem_okafor",
+        createdBy: "chidubem_okafor",
       });
     }
   );
