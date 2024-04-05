@@ -3,7 +3,8 @@ const { Schema, model } = require("mongoose");
 const userSchema = new Schema({
     user_name: {type: String, required: true},
     firebase_uid: {type: String, required: true},
-    bio: {type: String, required: false}
+    bio: {type: String, required: false},
+    profile: {type: String, required: false}
 })
 
 const postSchema = new Schema ({

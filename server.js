@@ -19,8 +19,9 @@ app.use(
 
 app.post("/api/signup", async (req, res) => {
   try {
-    const {user_name, firebase_uid} = req.body
-    const user = new User({user_name, firebase_uid})
+    console.log(req.body)
+    const {user_name, firebase_uid, user_image} = req.body
+    const user = new User({user_name, firebase_uid, user_image})
     const newUser = await user.save()
     // get the user in 
     const userInfo = await User.findOne({_id: newUser._id})
@@ -33,10 +34,9 @@ app.post("/api/signup", async (req, res) => {
 });
 
 app.post("/api/login", async (req, res) => {
-   const {data} = req.data
-   if(data) {
-
-   }
+   const {firebaseAccountId} = req.data
+  console.log(req)
+  
 });
 
 
