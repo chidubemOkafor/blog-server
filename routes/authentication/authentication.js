@@ -1,5 +1,8 @@
-const { router } = require("express");
+const express = require("express");
+const router = express.Router();
+const AuthController = require("../../controllers/AuthController");
 
-const aut = router();
+router.post("/signup", AuthController.Signup);
+router.post("/login/:firebaseUid", AuthController.Login);
 
-aut.get("");
+module.exports = router;
