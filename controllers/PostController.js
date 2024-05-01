@@ -1,17 +1,23 @@
-const { Post } = require("../schema");
-const mongoose = require("mongoose");
+const { Post } = require("../schema/schema");
 
 class PostControler {
   static async CreatePost(req, res) {
     const { title, tag, content } = req.body;
+    const isExist = await Post.find({ title });
 
-    // the post body is going to contail a body of json containing the title, body and tags
-    // first of all i need to check if there is a post of similer title
-
-    // then if there is no post of similer title i need to add the post to the database
-    // with the id of the poster,so that each post can be tied to person
-    // once the post has been posted successfully i need to return success to the frontend
-    console.log(req.body);
+    if (isExist) {
+      res.status(404).json({ message: "post already exists" });
+      console.log("post already exists");
+    } else {
+      const createPost = new Post({
+        title,
+        tag,
+        content,
+      });
+      const newPost = await createPost.save();
+      return res.status(200).json({ message: "post created", data: newPost });
+      console.log(newPost);
+    }
   }
 }
 
